@@ -44,7 +44,7 @@ app.delete('/api/books/:id', auth, booksCtrl.deleteBook) /* suppression d'un liv
 
 
 /* route concernant les images */
-app.use('/images', express.static(path.join(__dirname, 'images'))); /* récupération d'une image en fonction de son nom  */
+app.use('/images', express.static(path.join(__dirname, 'images'))); /* récupération d'une image en fonction de son nom */
 
 
 

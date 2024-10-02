@@ -33,7 +33,7 @@ function deleteImage(imageURL) {
 
 
 exports.createBook = (req, res, next) => {
-    const bookData = JSON.parse(req.body.book)
+    const bookData = req.body
 
     const newBook = new book({
         ...bookData,
@@ -84,6 +84,7 @@ exports.getBestRating = (req, res, next) => {
 exports.updateBook = (req, res, next) => {
     const bookId = req.params.id;
     const updatedData = req.body;
+    const requestingUserId = req.user.userId;
 
     book.findById(bookId)
         .then((findBook) => {
@@ -91,11 +92,15 @@ exports.updateBook = (req, res, next) => {
                 return res.status(404).json({ message: "Livre non trouvé." });
             }
 
+            if (requestingUserId !== findBook.userId) {
+                return res.status().json({ message: 'Non autorisé!' });
+            }
+
             if (req.file) {
                 usePromise(deleteImage(findBook.imageUrl))
                 updatedData.imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
             }
-            
+
             Object.assign(findBook, updatedData);
 
             return findBook.save()
@@ -145,11 +150,16 @@ exports.rateBook = (req, res, next) => {
 
 exports.deleteBook = (req, res, next) => {
     const bookId = req.params.id;
+    const requestingUserId = req.user.userId
 
     book.findById(bookId)
         .then((findBook) => {
             if (!findBook) {
                 return res.status(404).json({ message: "Livre non trouvé." });
+            }
+
+            if (requestingUserId !== findBook.userId) {
+                return res.status().json({ message: 'Non autorisé!' });
             }
 
             const imageUrl = findBook.imageUrl;

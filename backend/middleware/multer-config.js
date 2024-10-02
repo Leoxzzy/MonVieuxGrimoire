@@ -29,6 +29,8 @@ const convertImageToWebp = (req, res, next) => {
         req.file.filename = filename;
         req.file.outputPath = outputPath;
 
+        req.body = JSON.parse(req.body.book)
+
         next();
       });
   });

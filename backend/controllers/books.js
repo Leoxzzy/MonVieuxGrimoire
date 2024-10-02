@@ -3,6 +3,35 @@ const fs = require('fs'); /* gestion de fichiers */
 const path = require('path'); /* gestion de chemins de fichiers */
 
 
+
+// Fonction permettant l'utilisation d'une fonction / promesse. 
+async function usePromise(promise) {
+    try {
+        const response = await promise
+        console.log(response)
+    } catch(error) {
+        console.error(error)
+    }
+}
+
+// Fonction / promesse permettant la suppression d'une image.
+function deleteImage(imageURL) {
+    return new Promise((resolve, reject) => {
+        const fileName = imageURL.replace(/^http:\/\/localhost:4000\/images\//, '');
+        const filePath = path.join(__dirname, '../images', fileName);
+        
+        fs.unlink(filePath, (error) => {
+            if (error) {
+                return reject("Une erreur s'est produite lors de la supression de l'image du livre.");
+            }
+
+            resolve("Livre du livre a été supprimée avec succès.")
+        });
+    })    
+}
+
+
+
 exports.createBook = (req, res, next) => {
     const bookData = JSON.parse(req.body.book)
 
@@ -63,16 +92,17 @@ exports.updateBook = (req, res, next) => {
             }
 
             if (req.file) {
+                usePromise(deleteImage(findBook.imageUrl))
                 updatedData.imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
             }
-
+            
             Object.assign(findBook, updatedData);
 
             return findBook.save()
                 .then(() => res.status(200).json({ message: "Livre mis à jour avec success.", book: findBook }))
-                .catch((error) => res.status(500).json({ error }));
+                .catch((error) => res.status(500).json({  message: 'okok3', error: error }));
         })
-        .catch((error) => res.status(500).json({ error }));
+        .catch((error) => res.status(500).json({ message: 'okok2', error: error }));
 }
 
 exports.rateBook = (req, res, next) => {
@@ -97,22 +127,20 @@ exports.rateBook = (req, res, next) => {
 
             findBook.ratings.push(rate)
 
-            let newAverageRating = 0
+            let newAverageRatingRaw = 0
             findBook.ratings.forEach((element) => {
-                newAverageRating += element.grade || element.rating;
+                newAverageRatingRaw += element.grade || element.rating;
             });
-            newAverageRating = newAverageRating / findBook.ratings.length;
+            newAverageRatingRaw = newAverageRatingRaw / findBook.ratings.length;
+            newAverageRating = Math.round(newAverageRatingRaw) * 10 / 10
 
             findBook.averageRating = newAverageRating;
-
-            console.log(bookId)
 
             findBook.save()
                 .then((savedBook) => res.status(200).json(savedBook))
                 .catch((error) => res.status(500).json({ error }))
         })
-        .catch((error) => res.status(500).json({ error }))
- 
+        .catch((error) => res.status(500).json({ error })) 
 }
 
 exports.deleteBook = (req, res, next) => {
@@ -125,19 +153,11 @@ exports.deleteBook = (req, res, next) => {
             }
 
             const imageUrl = findBook.imageUrl;
-            const fileName = imageUrl.replace(/^http:\/\/localhost:4000\/images\//, '');
-            const filePath = path.join(__dirname, '../images', fileName);
 
             findBook.deleteOne()
                 .then(() => {
-
-                    fs.unlink(filePath, (error) => {
-                        if (error) {
-                            return res.status(500).json({ error });
-                        }
-                        res.status(200).json({ message: "Livre supprimé avec succès." });
-                    });
-
+                    usePromise(deleteImage(imageUrl))
+                    res.status(200).json({ message: "Livre supprimé avec succès." });
                 })
                 .catch((error) => res.status(500).json({ error }));
         })

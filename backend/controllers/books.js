@@ -93,7 +93,7 @@ exports.updateBook = (req, res, next) => {
             }
 
             if (requestingUserId !== findBook.userId) {
-                return res.status().json({ message: 'Non autorisé!' });
+                return res.status(401).json({ message: 'Non autorisé!' });
             }
 
             if (req.file) {
@@ -105,9 +105,9 @@ exports.updateBook = (req, res, next) => {
 
             return findBook.save()
                 .then(() => res.status(200).json({ message: "Livre mis à jour avec success.", book: findBook }))
-                .catch((error) => res.status(500).json({  message: 'okok3', error: error }));
+                .catch((error) => res.status(500).json({ error: error }));
         })
-        .catch((error) => res.status(500).json({ message: 'okok2', error: error }));
+        .catch((error) => res.status(500).json({ error: error }));
 }
 
 exports.rateBook = (req, res, next) => {
